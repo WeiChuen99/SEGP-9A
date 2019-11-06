@@ -28,13 +28,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager mSensorManager;
     private Sensor mSensorAccelerometer;
     private Sensor mSensorGyroscope;
+    private Sensor mSensorMagnetometer;
 
     private TextView mTextSensorAccelerometer;
     private TextView mTextSensorGyroscope;
 
-    private LineChart mChart;
+    private LineChart mChartGyro, mChartAccel, mChartMagneto;
 
-    private float firstValue, secondValue,thirdValue; // Variables to store data retrieved form sensor
+    private float firstValue, secondValue, thirdValue; // Variables to store data retrieved form sensor
 
     private Thread thread;
     private boolean plotData = true;
@@ -53,8 +54,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mTextSensorGyroscope = (TextView) findViewById(R.id.label_gyroscope);
 
         // Variables to get sensors
-        mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mSensorMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
 
         /*   NOTE : There's TYPE_ACCELEROMETER and TYPE_LINEAR_ACCELERATION that can be used
          *   TYPE_ACCELEROMETER will provide data with gravity calculations
@@ -71,61 +73,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             mTextSensorGyroscope.setText(sensor_error);
         }
 
-        mChart = (LineChart) findViewById(R.id.chart1);
-
-
-        mChart.getDescription().setEnabled(true); // Enable description text
-        mChart.getDescription().setText("Gyroscope measurements in radians");
-        //mChart.getDescription().setPosition();
-        mChart.getDescription().setTextSize(12f);
-
-        mChart.setTouchEnabled(true); // Enable touch gestures
-
-        mChart.setDragEnabled(true); // Enable scaling and dragging
-        mChart.setScaleEnabled(true);
-        mChart.setDrawGridBackground(true);
-
-        mChart.setPinchZoom(true); // If disabled, scaling can be done on x- and y-axis separately
-        mChart.setBackgroundColor(Color.WHITE); // Set an alternative background color
-
-        LineData data = new LineData();
-        data.setValueTextColor(Color.BLACK);
-
-        // add empty data
-        mChart.setData(data);
-
-        // get the legend (only possible after setting data)
-        Legend l = mChart.getLegend();
-
-        // modify the legend ...
-        l.setForm(Legend.LegendForm.LINE);
-        l.setTextColor(Color.BLACK);
-
-        XAxis xl = mChart.getXAxis();
-        xl.setTextColor(Color.WHITE);
-        xl.setDrawGridLines(false);
-        xl.setAvoidFirstLastClipping(true);
-        xl.setEnabled(true);
-
-        YAxis rightAxis = mChart.getAxisRight();
-        rightAxis.setTextColor(Color.BLACK);
-        rightAxis.setDrawGridLines(true);
-        rightAxis.setAxisMaximum(10f);
-        rightAxis.setAxisMinimum(-10f);
-        rightAxis.setDrawGridLines(true);
-
-        YAxis leftAxis = mChart.getAxisLeft();
-        leftAxis.setTextColor(Color.BLACK);
-        leftAxis.setDrawGridLines(true);
-        leftAxis.setAxisMaximum(10f);
-        leftAxis.setAxisMinimum(-10f);
-        leftAxis.setDrawGridLines(true);
-
-        mChart.getAxisRight().setDrawGridLines(false);
-        mChart.getXAxis().setDrawGridLines(false);
-        mChart.setDrawBorders(true);
-
-
+        mChartGyro = createChart(R.id.chart_gyroscope, mChartGyro, -10, 10);
+        mChartAccel = createChart(R.id.chart_accelerometer, mChartAccel, -10, 10);
+        mChartMagneto = createChart(R.id.chart_magnetometer, mChartMagneto, -100, 100);
 
         feedMultiple();
 
@@ -142,6 +92,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(mSensorGyroscope != null) {
             mSensorManager.registerListener(this, mSensorGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
         }
+        if(mSensorMagnetometer != null){
+            mSensorManager.registerListener(this, mSensorMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 
     @Override
@@ -155,11 +108,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         int sensorType = event.sensor.getType();
 
         switch (sensorType){
-            case Sensor.TYPE_ACCELEROMETER :
+            case Sensor.TYPE_LINEAR_ACCELERATION :
                 firstValue = event.values[0];
                 secondValue = event.values[1];
                 thirdValue = event.values[2];
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
+                addEntry(event, mChartAccel);
 
                 break;
 
@@ -168,9 +122,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 secondValue = event.values[1];
                 thirdValue = event.values[2];
                 mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, firstValue, secondValue, thirdValue));
-                addEntry(event);
+                addEntry(event, mChartGyro);
 
                 break;
+
+            case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED:
+                firstValue = event.values[0];
+                secondValue = event.values[1];
+                thirdValue = event.values[2];
+                addEntry(event, mChartMagneto);
+
+                break;
+
 
             default :
                 break;
@@ -178,9 +141,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    private void addEntry(SensorEvent event) {
+    private void addEntry(SensorEvent event, LineChart chart) {
 
-        LineData data = mChart.getData();
+        LineData data = chart.getData();
 
         if (data != null) {
 
@@ -209,14 +172,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             data.notifyDataChanged();
 
             // let the chart know it's data has changed
-            mChart.notifyDataSetChanged();
+            chart.notifyDataSetChanged();
 
             // limit the number of visible entries
-            mChart.setVisibleXRangeMaximum(150);
+            chart.setVisibleXRangeMaximum(150);
             // mChart.setVisibleYRange(30, AxisDependency.LEFT);
 
             // move to the latest entry
-            mChart.moveViewToX(data.getEntryCount());
+            chart.moveViewToX(data.getEntryCount());
 
         }
     }
@@ -276,6 +239,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onResume();
         mSensorManager.registerListener(this, mSensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, mSensorGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mSensorMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -283,6 +247,63 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager.unregisterListener(MainActivity.this);
         thread.interrupt();
         super.onDestroy();
+    }
+
+    private LineChart createChart(int viewID, LineChart mChart, float YMin, float YMax){
+
+        mChart = (LineChart) findViewById(viewID);
+
+        mChart.getDescription().setEnabled(true); // Enable description text
+        mChart.getDescription().setText("Gyroscope measurements in radians");
+        mChart.getDescription().setTextSize(12f);
+
+        mChart.setTouchEnabled(true); // Enable touch gestures
+
+        mChart.setDragEnabled(true); // Enable scaling and dragging
+        mChart.setScaleEnabled(true);
+        mChart.setDrawGridBackground(true);
+
+        mChart.setPinchZoom(true); // If disabled, scaling can be done on x- and y-axis separately
+        mChart.setBackgroundColor(Color.WHITE); // Set an alternative background color
+
+        LineData data = new LineData();
+        data.setValueTextColor(Color.BLACK);
+
+        // add empty data
+        mChart.setData(data);
+
+        // get the legend (only possible after setting data)
+        Legend l = mChart.getLegend();
+
+        // modify the legend ...
+        l.setForm(Legend.LegendForm.LINE);
+        l.setTextColor(Color.BLACK);
+
+        XAxis xl = mChart.getXAxis();
+        xl.setTextColor(Color.WHITE);
+        xl.setDrawGridLines(false);
+        xl.setAvoidFirstLastClipping(true);
+        xl.setEnabled(true);
+
+        YAxis rightAxis = mChart.getAxisRight();
+        rightAxis.setTextColor(Color.BLACK);
+        rightAxis.setDrawGridLines(true);
+        rightAxis.setAxisMaximum(YMax);
+        rightAxis.setAxisMinimum(YMin);
+        rightAxis.setDrawGridLines(true);
+
+        YAxis leftAxis = mChart.getAxisLeft();
+        leftAxis.setTextColor(Color.BLACK);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setAxisMaximum(YMax);
+        leftAxis.setAxisMinimum(YMin);
+        leftAxis.setDrawGridLines(true);
+
+        mChart.getAxisRight().setDrawGridLines(false);
+        mChart.getXAxis().setDrawGridLines(false);
+        mChart.setDrawBorders(true);
+
+        return mChart;
     }
 
 
