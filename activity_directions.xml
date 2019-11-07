@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Directions">
+
+    Button buttonshape.xml
+
+    <Button
+        android:id="@+id/angry_btn_up"
+
+        android:layout_width="157dp"
+        android:layout_height="108dp"
+
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="142dp"
+        android:layout_marginTop="252dp"
+        android:background="@drawable/button_up"
+        android:shadowColor="#FFFFFF"
+        android:shadowDx="1"
+        android:shadowDy="4"
+        android:shadowRadius="8"
+        android:text="UP"
+        android:textAlignment="center"
+        android:textColor="#FF0A0A"
+        android:textSize="46sp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.32" />
+
+    <Button
+        android:id="@+id/angry_btn_right"
+
+        android:layout_width="183dp"
+        android:layout_height="120dp"
+        android:layout_alignParentTop="true"
+
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="114dp"
+        android:layout_marginTop="330dp"
+        android:layout_marginEnd="33dp"
+        android:background="@drawable/button_right"
+        android:shadowColor="#FFFFFF"
+        android:shadowDx="1"
+        android:shadowDy="4"
+        android:shadowRadius="8"
+        android:text="RIGHT"
+        android:textAlignment="textEnd"
+        android:textColor="#FF0A0A"
+        android:textSize="28sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/angry_btn_left"
+
+        android:layout_width="183dp"
+        android:layout_height="120dp"
+
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="71dp"
+        android:layout_marginTop="331dp"
+        android:layout_marginEnd="106dp"
+        android:background="@drawable/button_left"
+        android:shadowColor="#FFFFFF"
+        android:shadowDx="1"
+        android:shadowDy="4"
+        android:shadowRadius="8"
+        android:text="LEFT"
+        android:textAlignment="viewStart"
+        android:textColor="#FF0A0A"
+        android:textSize="28sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/angry_btn_down"
+
+        android:layout_width="157dp"
+        android:layout_height="108dp"
+
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="139dp"
+        android:layout_marginBottom="211dp"
+        android:background="@drawable/button_down"
+        android:shadowColor="#FFFFFF"
+        android:shadowDx="1"
+        android:shadowDy="4"
+        android:shadowRadius="8"
+        android:text="DOWN"
+        android:textAlignment="center"
+        android:textColor="#FF0A0A"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.64" />
+
+</RelativeLayout>
