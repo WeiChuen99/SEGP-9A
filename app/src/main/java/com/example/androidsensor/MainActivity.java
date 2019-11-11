@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Access text in the app.
         mTextSensorAccelerometer = (TextView) findViewById(R.id.label_accelerometer);
-        mTextSensorOrientation = (TextView) findViewById(R.id.label_gyroscope);
+        mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
         //mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
 
         // Variables to get sensors
