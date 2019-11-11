@@ -29,9 +29,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor mSensorAccelerometer;
     private Sensor mSensorGyroscope;
     private Sensor mSensorMagnetometer;
+    private Sensor mSensorOrientation;
 
     private TextView mTextSensorAccelerometer;
     private TextView mTextSensorGyroscope;
+    private TextView mTextSensorOrientation;
 
     private LineChart mChartGyro, mChartAccel, mChartMagneto;
 
@@ -51,12 +53,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Access text in the app.
         mTextSensorAccelerometer = (TextView) findViewById(R.id.label_accelerometer);
-        mTextSensorGyroscope = (TextView) findViewById(R.id.label_gyroscope);
+        mTextSensorOrientation = (TextView) findViewById(R.id.label_gyroscope);
+        //mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
 
         // Variables to get sensors
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mSensorMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
+        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+
 
         /*   NOTE : There's TYPE_ACCELEROMETER and TYPE_LINEAR_ACCELERATION that can be used
          *   TYPE_ACCELEROMETER will provide data with gravity calculations
@@ -71,6 +76,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if(mSensorGyroscope == null) {
             mTextSensorGyroscope.setText(sensor_error);
+        }
+
+        if(mSensorOrientation == null) {
+            mTextSensorOrientation.setText(sensor_error);
         }
 
         mChartGyro = createChart(R.id.chart_gyroscope, mChartGyro, -10, 10);
@@ -94,6 +103,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if(mSensorMagnetometer != null){
             mSensorManager.registerListener(this, mSensorMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+        if(mSensorOrientation != null){
+            mSensorManager.registerListener(this, mSensorOrientation, SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
 
@@ -121,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 firstValue = event.values[0];
                 secondValue = event.values[1];
                 thirdValue = event.values[2];
-                mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, firstValue, secondValue, thirdValue));
+                //mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, firstValue, secondValue, thirdValue));
                 addEntry(event, mChartGyro);
 
                 break;
@@ -131,6 +143,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 secondValue = event.values[1];
                 thirdValue = event.values[2];
                 addEntry(event, mChartMagneto);
+
+                break;
+
+            case Sensor.TYPE_ORIENTATION:
+                firstValue = Math.round(event.values[0]);
+                mTextSensorOrientation.setText(Float.toString(firstValue) + (char) 0x00B0);
 
                 break;
 
