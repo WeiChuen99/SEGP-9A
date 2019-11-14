@@ -64,21 +64,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
-        /*
-        // Check whether this app has write external storage permission or not.
-        int writeExternalStoragePermission = ContextCompat.checkSelfPermission(ExternalStorageActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        // If do not grant write external storage permission.
-        if(writeExternalStoragePermission!= PackageManager.PERMISSION_GRANTED)
-        {
-            // Request user to grant write external storage permission.
-            ActivityCompat.requestPermissions(ExternalStorageActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
-        }*/
-
         setContentView(R.layout.activity_main);
 
+        /*
+         * Datalogging part, create/check for file.
+         * Very rough implementation, can possibly be improved.
+         * */
         context = this.getApplicationContext();
-
         file = new File(context.getExternalFilesDir(null) + "/" + "AccelLog.csv"); // Create subfolder + text file
         if(!file.exists()){
             try {
@@ -86,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.v("fileDir ", "Not created");
-
             }
         }
 
@@ -95,9 +86,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
         }
 
+        tv = (TextView)findViewById(R.id.text_view); // Show in app for debugging purposes. Can be removed if direct access to csv is possible
 
-        tv = (TextView)findViewById(R.id.text_view);
-
+        // End of datalogging part
 
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE); // SensorManager to access device sensors
@@ -168,6 +159,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
                 addEntry(event, mChartAccel);
 
+                /*
+                 *  BELOW
+                 *  Writing to AccelLog.csv
+                 *  Very rough implementation, can possibly be improved.
+                 * */
                 if(file.exists()){
                     try {
                         FileWriter fileWriter  = new FileWriter(file);
@@ -179,9 +175,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     }
                 }
 
-
                 StringBuilder text = new StringBuilder();
 
+                /*
+                 *  BELOW
+                 *  Used for debugging purposes. writes csv contents to textview in the app
+                 *  If csv can be accessed then can remove the below code until break
+                 */
                 try {
                     BufferedReader br = new BufferedReader(new FileReader(file));
                     String line;
@@ -196,7 +196,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     //You'll need to add proper error handling here
                 }
                 tv.setText(text.toString());
-
 
                 break;
 
