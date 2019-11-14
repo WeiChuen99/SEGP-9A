@@ -1,7 +1,11 @@
 package com.example.androidsensor;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -11,6 +15,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import android.os.Environment;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -21,6 +27,15 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -40,12 +55,50 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Thread thread;
     private boolean plotData = true;
 
+    private File fileDir, file;
+    private TextView tv;
+    private Context context;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+
+        /*
+        // Check whether this app has write external storage permission or not.
+        int writeExternalStoragePermission = ContextCompat.checkSelfPermission(ExternalStorageActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        // If do not grant write external storage permission.
+        if(writeExternalStoragePermission!= PackageManager.PERMISSION_GRANTED)
+        {
+            // Request user to grant write external storage permission.
+            ActivityCompat.requestPermissions(ExternalStorageActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_WRITE_EXTERNAL_STORAGE_PERMISSION);
+        }*/
+
         setContentView(R.layout.activity_main);
+
+        context = this.getApplicationContext();
+
+        file = new File(context.getExternalFilesDir(null) + "/" + "AccelLog.csv"); // Create subfolder + text file
+        if(!file.exists()){
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.v("fileDir ", "Not created");
+
+            }
+        }
+
+        if(file.exists()){
+            Log.v("fileDir ", "Exists");
+            Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
+        }
+
+
+        tv = (TextView)findViewById(R.id.text_view);
+
+
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE); // SensorManager to access device sensors
 
@@ -114,6 +167,36 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 thirdValue = event.values[2];
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
                 addEntry(event, mChartAccel);
+
+                if(file.exists()){
+                    try {
+                        FileWriter fileWriter  = new FileWriter(file);
+
+                        fileWriter.append(String.format("%.2f", firstValue)+","+String.format("%.2f", secondValue)+","+String.format("%.2f", thirdValue)+"\n");
+                        fileWriter.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+                StringBuilder text = new StringBuilder();
+
+                try {
+                    BufferedReader br = new BufferedReader(new FileReader(file));
+                    String line;
+
+                    while ((line = br.readLine()) != null) {
+                        text.append(line);
+                        text.append('\n');
+                    }
+                    br.close();
+                }
+                catch (IOException e) {
+                    //You'll need to add proper error handling here
+                }
+                tv.setText(text.toString());
+
 
                 break;
 

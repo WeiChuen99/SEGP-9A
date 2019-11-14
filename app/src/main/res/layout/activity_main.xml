@@ -23,6 +23,16 @@
                 ></TextView>
 
             <TextView
+                android:id = "@+id/text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/chart_magnetometer"
+                ></TextView>
+
+
+            <TextView
                 android:id = "@+id/label_accelerometer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
