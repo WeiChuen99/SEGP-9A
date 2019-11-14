@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             case Sensor.TYPE_ORIENTATION:
                 firstValue = Math.round(event.values[0]);
-                mTextSensorOrientation.setText(Float.toString(firstValue) + (char) 0x00B0);
+                mTextSensorOrientation.setText("Compass : " + Float.toString(firstValue) + (char) 0x00B0);
 
                 break;
 
