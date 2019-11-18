@@ -31,6 +31,7 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -166,36 +167,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  * */
                 if(file.exists()){
                     try {
-                        FileWriter fileWriter  = new FileWriter(file);
+                        FileWriter fileWriter  = new FileWriter(file, true);
 
-                        fileWriter.append(String.format("%.2f", firstValue)+","+String.format("%.2f", secondValue)+","+String.format("%.2f", thirdValue)+"\n");
+                        fileWriter.append(String.format("%.2f", firstValue));
+                        fileWriter.append(',');
+                        fileWriter.append(String.format("%.2f", secondValue));
+                        fileWriter.append(',');
+                        fileWriter.append(String.format("%.2f", thirdValue));
+                        fileWriter.append("\n");
+
+                        fileWriter.flush();
                         fileWriter.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-
-                StringBuilder text = new StringBuilder();
-
-                /*
-                 *  BELOW
-                 *  Used for debugging purposes. writes csv contents to textview in the app
-                 *  If csv can be accessed then can remove the below code until break
-                 */
-                try {
-                    BufferedReader br = new BufferedReader(new FileReader(file));
-                    String line;
-
-                    while ((line = br.readLine()) != null) {
-                        text.append(line);
-                        text.append('\n');
-                    }
-                    br.close();
-                }
-                catch (IOException e) {
-                    //You'll need to add proper error handling here
-                }
-                tv.setText(text.toString());
 
                 break;
 
