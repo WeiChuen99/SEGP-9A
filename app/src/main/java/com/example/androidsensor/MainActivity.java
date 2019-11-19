@@ -17,7 +17,9 @@ import android.hardware.SensorManager;
 
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.Button;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -38,6 +40,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import java.util.Locale;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -60,6 +65,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView tv;
     private Context context;
 
+
+    private Button startButton;
+    private Button stopButton;
+    private boolean record = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +133,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         feedMultiple();
 
+        // get IDs of buttons
+        startButton = findViewById(R.id.startButton);
+        stopButton = findViewById(R.id.stopButton);
+
+        Button startButton = findViewById(R.id.startButton);
+        startButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                record = true;
+            }
+        });
+
+        Button stopButton = findViewById(R.id.stopButton);
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                record = false;
+            }
+        });
     }
 
     @Override
@@ -165,21 +191,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  Writing to AccelLog.csv
                  *  Very rough implementation, can possibly be improved.
                  * */
-                if(file.exists()){
-                    try {
-                        FileWriter fileWriter  = new FileWriter(file, true);
+                if (record == true) {
+                    if (file.exists()) {
+                        try {
+                            FileWriter fileWriter = new FileWriter(file, true);
 
-                        fileWriter.append(String.format("%.2f", firstValue));
-                        fileWriter.append(',');
-                        fileWriter.append(String.format("%.2f", secondValue));
-                        fileWriter.append(',');
-                        fileWriter.append(String.format("%.2f", thirdValue));
-                        fileWriter.append("\n");
+                            String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
-                        fileWriter.flush();
-                        fileWriter.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                            fileWriter.append(String.format("%.2f", firstValue));
+                            fileWriter.append(',');
+                            fileWriter.append(String.format("%.2f", secondValue));
+                            fileWriter.append(',');
+                            fileWriter.append(String.format("%.2f", thirdValue));
+                            fileWriter.append(',');
+                            fileWriter.append(currentTime);
+                            fileWriter.append("\n");
+
+                            fileWriter.flush();
+                            fileWriter.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
@@ -205,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             default :
                 break;
+
         }
 
     }
@@ -384,4 +417,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
+
+
 }
