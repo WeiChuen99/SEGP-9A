@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  * Datalogging part, create/check for file.
                  * Very rough implementation, can possibly be improved.
                  * */
-                String currentTime = new SimpleDateFormat("HH mm ss", Locale.getDefault()).format(new Date());
+                String currentTime = new SimpleDateFormat("HH.mm.ss", Locale.getDefault()).format(new Date());
                 String pathName = context.getExternalFilesDir(null) + "/" + "AccelLog " + currentTime + ".csv";
                 file = new File(pathName); // Create subfolder + text file
 
