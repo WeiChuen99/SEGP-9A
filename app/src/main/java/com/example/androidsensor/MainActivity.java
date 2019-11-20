@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView tv;
     private Context context;
 
-
     private Button startButton;
     private Button stopButton;
     private boolean record = false;
@@ -77,31 +76,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        /*
-         * Datalogging part, create/check for file.
-         * Very rough implementation, can possibly be improved.
-         * */
-        context = this.getApplicationContext();
-        file = new File(context.getExternalFilesDir(null) + "/" + "AccelLog.csv"); // Create subfolder + text file
-        if(!file.exists()){
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.v("fileDir ", "Not created");
-            }
-        }
-
-        if(file.exists()){
-            Log.v("fileDir ", "Exists");
-            Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
-        }
-
-        tv = (TextView)findViewById(R.id.text_view); // Show in app for debugging purposes. Can be removed if direct access to csv is possible
-
-        // End of datalogging part
-
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE); // SensorManager to access device sensors
 
@@ -145,18 +119,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // get IDs of buttons
         startButton = findViewById(R.id.startButton);
         stopButton = findViewById(R.id.stopButton);
+        context = this.getApplicationContext();
 
-        Button startButton = findViewById(R.id.startButton);
         startButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 record = true;
+                startButton.setEnabled(false);
+
+                /*
+                 * Datalogging part, create/check for file.
+                 * Very rough implementation, can possibly be improved.
+                 * */
+                String currentTime = new SimpleDateFormat("HH.mm.ss", Locale.getDefault()).format(new Date());
+                String pathName = context.getExternalFilesDir(null) + "/" + "AccelLog " + currentTime + ".csv";
+                file = new File(pathName); // Create subfolder + text file
+
+                if(!file.exists()){
+                    try {
+                        file.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Log.v("fileDir ", "Not created");
+                    }
+                }
+
+                if(file.exists()){
+                    Log.v("fileDir ", "Exists");
+                    Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
+                }
+
+                tv = (TextView)findViewById(R.id.text_view); // Show in app for debugging purposes. Can be removed if direct access to csv is possible
+
+                // End of datalogging part
             }
         });
 
-        Button stopButton = findViewById(R.id.stopButton);
         stopButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 record = false;
+                startButton.setEnabled(true);
             }
         });
     }
