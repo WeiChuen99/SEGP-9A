@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
                 }
 
+
                 tv = (TextView)findViewById(R.id.text_view); // Show in app for debugging purposes. Can be removed if direct access to csv is possible
 
                 // End of datalogging part
@@ -209,16 +210,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         try {
                             FileWriter fileWriter = new FileWriter(file, true);
 
-                            String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                            //String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
+                            fileWriter.append("X,Y,Z,Compass,Time\n");
                             fileWriter.append(String.format("%.2f", firstValue));
                             fileWriter.append(',');
                             fileWriter.append(String.format("%.2f", secondValue));
                             fileWriter.append(',');
                             fileWriter.append(String.format("%.2f", thirdValue));
                             fileWriter.append(',');
-                            fileWriter.append(currentTime);
-                            fileWriter.append("\n");
+                            //fileWriter.append(currentTime);
+                            //fileWriter.append("\n");
 
                             fileWriter.flush();
                             fileWriter.close();
@@ -250,6 +252,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case Sensor.TYPE_ORIENTATION:
                 firstValue = Math.round(event.values[0]);
                 mTextSensorOrientation.setText("Compass : " + Float.toString(firstValue) + (char) 0x00B0);
+
+                if (record == true) {
+                    if (file.exists()) {
+                        try {
+                            FileWriter fileWriter = new FileWriter(file, true);
+
+                            String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+
+                            //fileWriter.append("X    Y   Z   Time\n");
+                            fileWriter.append(String.format("%.2f", firstValue));
+                            fileWriter.append(',');
+                            fileWriter.append(currentTime);
+                            fileWriter.append("\n");
+
+                            fileWriter.flush();
+                            fileWriter.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
 
                 break;
 
