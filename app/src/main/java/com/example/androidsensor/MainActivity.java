@@ -29,6 +29,8 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -71,11 +73,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Button stopButton;
     private boolean record = false;
 
+    // Server related
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mDatabase;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mDatabase = mFirebaseDatabase.getReference("data");
+
+
+
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE); // SensorManager to access device sensors
 
@@ -206,6 +219,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  Very rough implementation, can possibly be improved.
                  * */
                 if (record == true) {
+
+                    mDatabase.child("X").setValue(firstValue);
+                    mDatabase.child("Y").setValue(secondValue);
+                    mDatabase.child("Z").setValue(thirdValue);
+
+                    /*
                     if (file.exists()) {
                         try {
                             FileWriter fileWriter = new FileWriter(file, true);
@@ -228,6 +247,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             e.printStackTrace();
                         }
                     }
+                    */
                 }
 
                 break;
@@ -254,6 +274,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mTextSensorOrientation.setText("Compass : " + Float.toString(firstValue) + (char) 0x00B0);
 
                 if (record == true) {
+
+                    mDatabase.child("data").setValue(firstValue + " " + secondValue + " " + thirdValue);
+
+
+                    /*
                     if (file.exists()) {
                         try {
                             FileWriter fileWriter = new FileWriter(file, true);
@@ -272,6 +297,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             e.printStackTrace();
                         }
                     }
+                    */
                 }
 
                 break;
