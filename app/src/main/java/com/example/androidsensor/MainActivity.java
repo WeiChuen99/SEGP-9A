@@ -60,9 +60,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private LineChart mChartGyro, mChartAccel, mChartMagneto;
 
-    private float firstValue, secondValue, thirdValue;// Variables to store data retrieved form sensor
-    private float rMat[] = new float[9];
-    private float[] orientation = new float[3];
+    private float firstValue, secondValue, thirdValue; // Variables to store data retrieved form sensor
+
     private Thread thread;
     private boolean plotData = true;
 
@@ -102,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mSensorMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
-        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
 
 
         /*   NOTE : There's TYPE_ACCELEROMETER and TYPE_LINEAR_ACCELERATION that can be used
@@ -270,9 +269,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 break;
 
-            case Sensor.TYPE_ROTATION_VECTOR:
-                SensorManager.getRotationMatrixFromVector(rMat,event.values);
-                firstValue = Math.round( (int) (Math.toDegrees(SensorManager.getOrientation(rMat,orientation)[0]) + 360) % 360);
+            case Sensor.TYPE_ORIENTATION:
+                firstValue = Math.round(event.values[0]);
                 mTextSensorOrientation.setText("Compass : " + Float.toString(firstValue) + (char) 0x00B0);
 
                 if (record == true) {
