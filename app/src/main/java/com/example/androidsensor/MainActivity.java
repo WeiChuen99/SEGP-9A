@@ -48,27 +48,33 @@ import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
+    // Sensors on device
     private SensorManager mSensorManager;
     private Sensor mSensorAccelerometer;
     private Sensor mSensorGyroscope;
     private Sensor mSensorMagnetometer;
     private Sensor mSensorOrientation;
 
+    // Values in app
     private TextView mTextSensorAccelerometer;
     private TextView mTextSensorGyroscope;
     private TextView mTextSensorOrientation;
 
+    // Graph
     private LineChart mChartGyro, mChartAccel, mChartMagneto;
 
-    private float firstValue, secondValue, thirdValue; // Variables to store data retrieved form sensor
+    // Variables to store data retrieved from sensor
+    private float xValue, yValue, zValue;
 
     private Thread thread;
     private boolean plotData = true;
 
+    // Writing sensor data to file
     private File fileDir, file;
     private TextView tv;
     private Context context;
 
+    // Button to start and stop
     private Button startButton;
     private Button stopButton;
     private boolean record = false;
@@ -86,9 +92,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Get database info
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabase = mFirebaseDatabase.getReference("data");
-
-
-
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE); // SensorManager to access device sensors
 
@@ -147,18 +150,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 String pathName = context.getExternalFilesDir(null) + "/" + "AccelLog " + currentTime + ".csv";
                 file = new File(pathName); // Create subfolder + text file
 
-                if(!file.exists()){
+                if(file.exists()){
+                    Log.v("fileDir ", "Exists");
+                    Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
+                }
+                else {
                     try {
                         file.createNewFile();
                     } catch (IOException e) {
                         e.printStackTrace();
                         Log.v("fileDir ", "Not created");
                     }
-                }
-
-                if(file.exists()){
-                    Log.v("fileDir ", "Exists");
-                    Log.v("fileDir ", context.getExternalFilesDir(null)+ "***");
                 }
 
 
@@ -207,11 +209,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         switch (sensorType){
             case Sensor.TYPE_LINEAR_ACCELERATION :
-                firstValue = event.values[0];
-                secondValue = event.values[1];
-                thirdValue = event.values[2];
-                mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
+                xValue = event.values[0];
+                yValue = event.values[1];
+                zValue = event.values[2];
                 addEntry(event, mChartAccel);
+                // Set the text in the app
+                mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue));
 
                 /*
                  *  BELOW
@@ -220,88 +223,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  * */
                 if (record == true) {
 
-                    mDatabase.child("X").setValue(firstValue);
-                    mDatabase.child("Y").setValue(secondValue);
-                    mDatabase.child("Z").setValue(thirdValue);
+                    mDatabase.child("X").setValue(xValue);
+                    mDatabase.child("Y").setValue(yValue);
+                    mDatabase.child("Z").setValue(zValue);
 
-                    /*
-                    if (file.exists()) {
-                        try {
-                            FileWriter fileWriter = new FileWriter(file, true);
-
-                            //String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
-
-                            fileWriter.append("X,Y,Z,Compass,Time\n");
-                            fileWriter.append(String.format("%.2f", firstValue));
-                            fileWriter.append(',');
-                            fileWriter.append(String.format("%.2f", secondValue));
-                            fileWriter.append(',');
-                            fileWriter.append(String.format("%.2f", thirdValue));
-                            fileWriter.append(',');
-                            //fileWriter.append(currentTime);
-                            //fileWriter.append("\n");
-
-                            fileWriter.flush();
-                            fileWriter.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    */
                 }
 
                 break;
 
             case Sensor.TYPE_GYROSCOPE :
-                firstValue = event.values[0];
-                secondValue = event.values[1];
-                thirdValue = event.values[2];
-                //mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, firstValue, secondValue, thirdValue));
+                xValue = event.values[0];
+                yValue = event.values[1];
+                zValue = event.values[2];
+                //mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, xValue, yValue, zValue));
                 addEntry(event, mChartGyro);
 
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-                firstValue = event.values[0];
-                secondValue = event.values[1];
-                thirdValue = event.values[2];
+                xValue = event.values[0];
+                yValue = event.values[1];
+                zValue = event.values[2];
                 addEntry(event, mChartMagneto);
 
                 break;
 
             case Sensor.TYPE_ORIENTATION:
-                firstValue = Math.round(event.values[0]);
-                mTextSensorOrientation.setText("Compass : " + Float.toString(firstValue) + (char) 0x00B0);
+                xValue = Math.round(event.values[0]);
+                mTextSensorOrientation.setText("Compass : " + Float.toString(xValue) + (char) 0x00B0);
 
                 if (record == true) {
 
-                    mDatabase.child("compass").setValue(firstValue);
+                    mDatabase.child("compass").setValue(xValue);
 
-
-                    /*
-                    if (file.exists()) {
-                        try {
-                            FileWriter fileWriter = new FileWriter(file, true);
-
-                            String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
-
-                            //fileWriter.append("X    Y   Z   Time\n");
-                            fileWriter.append(String.format("%.2f", firstValue));
-                            fileWriter.append(',');
-                            fileWriter.append(currentTime);
-                            fileWriter.append("\n");
-
-                            fileWriter.flush();
-                            fileWriter.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    */
                 }
 
                 break;
-
 
             default :
                 break;
@@ -349,7 +306,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             // move to the latest entry
             chart.moveViewToX(data.getEntryCount());
-
         }
     }
 
