@@ -163,7 +163,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     }
                 }
 
-
                 tv = (TextView)findViewById(R.id.text_view); // Show in app for debugging purposes. Can be removed if direct access to csv is possible
 
                 // End of datalogging part
@@ -203,15 +202,76 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager.unregisterListener(this); // Remove Listener
     }
 
-    @Override
+//    @Override
+//    public void onSensorChanged(SensorEvent event) {
+//        int sensorType = event.sensor.getType();
+//
+//        switch (sensorType){
+//            case Sensor.TYPE_LINEAR_ACCELERATION :
+//                xValue = event.values[0];
+//                yValue = event.values[1];
+//                zValue = event.values[2];
+//                addEntry(event, mChartAccel);
+//                // Set the text in the app
+//                mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue));
+//
+//                /*
+//                 *  BELOW
+//                 *  Writing to AccelLog.csv
+//                 *  Very rough implementation, can possibly be improved.
+//                 * */
+//                if (record == true) {
+//
+//                    mDatabase.child("X").setValue(xValue);
+//                    mDatabase.child("Y").setValue(yValue);
+//                    mDatabase.child("Z").setValue(zValue);
+//
+//                }
+//
+//                break;
+//
+//            case Sensor.TYPE_GYROSCOPE :
+//                xValue = event.values[0];
+//                yValue = event.values[1];
+//                zValue = event.values[2];
+//                //mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, xValue, yValue, zValue));
+//                addEntry(event, mChartGyro);
+//
+//                break;
+//
+//            case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED:
+//                xValue = event.values[0];
+//                yValue = event.values[1];
+//                zValue = event.values[2];
+//                addEntry(event, mChartMagneto);
+//
+//                break;
+//
+//            case Sensor.TYPE_ORIENTATION:
+//                xValue = Math.round(event.values[0]);
+//                mTextSensorOrientation.setText("Compass : " + Float.toString(xValue) + (char) 0x00B0);
+//
+//                if (record == true) {
+//
+//                    mDatabase.child("compass").setValue(xValue);
+//
+//                }
+//
+//                break;
+//
+//            default :
+//                break;
+//
+//        }
+//
+//    }
+
     public void onSensorChanged(SensorEvent event) {
         int sensorType = event.sensor.getType();
 
         switch (sensorType){
             case Sensor.TYPE_LINEAR_ACCELERATION :
-                xValue = event.values[0];
-                yValue = event.values[1];
-                zValue = event.values[2];
+                setValues(event);
                 addEntry(event, mChartAccel);
                 // Set the text in the app
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue));
@@ -232,18 +292,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
 
             case Sensor.TYPE_GYROSCOPE :
-                xValue = event.values[0];
-                yValue = event.values[1];
-                zValue = event.values[2];
+                setValues(event);
                 //mTextSensorGyroscope.setText(getResources().getString(R.string.label_gyroscope, xValue, yValue, zValue));
                 addEntry(event, mChartGyro);
 
                 break;
 
             case Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-                xValue = event.values[0];
-                yValue = event.values[1];
-                zValue = event.values[2];
+                setValues(event);
                 addEntry(event, mChartMagneto);
 
                 break;
@@ -253,9 +309,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mTextSensorOrientation.setText("Compass : " + Float.toString(xValue) + (char) 0x00B0);
 
                 if (record == true) {
-
                     mDatabase.child("compass").setValue(xValue);
-
                 }
 
                 break;
@@ -264,7 +318,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
 
         }
+    }
 
+    public void setValues (SensorEvent event) {
+        xValue = event.values[0];
+        yValue = event.values[1];
+        zValue = event.values[2];
     }
 
     private void addEntry(SensorEvent event, LineChart chart) {
