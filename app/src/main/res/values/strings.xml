@@ -4,4 +4,6 @@
     <string name="label_gyroscope">Gyroscope (radians per sec) : X %1$.2f Y %2$.2f Z %3$.2f</string>
     <string name="label_proximity">Proximity Sensor : %1$.2f</string>
     <string name="label_accelerometer">Accelerometer : X %1$.2f Y %2$.2f Z %3$.2f</string>
+    <string name="label_velocity">Velocity : X %1$.2f Y %2$.2f Z %3$.2f</string>
+    <string name="label_velocity_GPS">Velocity : X %1$.2f Y %2$.2f Z %3$.2f</string>
 </resources>

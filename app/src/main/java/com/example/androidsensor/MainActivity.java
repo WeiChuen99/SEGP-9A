@@ -57,10 +57,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView mTextSensorAccelerometer;
     private TextView mTextSensorGyroscope;
     private TextView mTextSensorOrientation;
+    private TextView mTextVelocity;
+    private TextView mTextVelocityGPS;
 
     private LineChart mChartGyro, mChartAccel, mChartMagneto;
 
-    private float firstValue, secondValue, thirdValue; // Variables to store data retrieved form sensor
+    private float firstValue, secondValue, thirdValue;// Variables to store data retrieved form sensor
+    private float rMat[] = new float[9];
+    private float[] orientation = new float[3];
+    private double velocityX = 0.0f; // Assume device not moving when starting
+    private double velocityY = 0.0f;
+    private double velocityZ = 0.0f;
+    private double timestamp = 0.0f;
+    private static final float nanosecond2second = 1.0f / 1000000000.0f; // Convert nanoseconds to seconds
+
 
     private Thread thread;
     private boolean plotData = true;
@@ -96,12 +106,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mTextSensorAccelerometer = (TextView) findViewById(R.id.label_accelerometer);
         mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
         //mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
+        mTextVelocity = (TextView) findViewById(R.id.label_velocity);
+        mTextVelocityGPS = (TextView) findViewById((R.id.label_velocity_GPS));
 
         // Variables to get sensors
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mSensorMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
-        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
 
         /*   NOTE : There's TYPE_ACCELEROMETER and TYPE_LINEAR_ACCELERATION that can be used
@@ -207,11 +219,57 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         switch (sensorType){
             case Sensor.TYPE_LINEAR_ACCELERATION :
+                double deltaTime;
+
                 firstValue = event.values[0];
                 secondValue = event.values[1];
                 thirdValue = event.values[2];
+
+                /*
+                 *  Filter small movements to reduce noise.
+                 *  If accelerometer values ALL read between -0.1 and 0.1,
+                 *  assume the user is simply standing/ not moving
+                 *  Value should be adjusted later on after further testing
+                 */
+                if(Math.abs(firstValue) <= 0.1 && Math.abs(secondValue) <= 0.1 && Math.abs(thirdValue) <= 0.1)
+                {
+                    velocityX = 0; // This part also allows the velocity to "reset" itself. Hopefully reducing accumulated offset
+                    velocityY = 0;
+                    velocityZ = 0;
+                }
+
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
+
                 addEntry(event, mChartAccel);
+
+                // Timestamp returns time in nanoseconds, which should be much more accurate
+                if(timestamp == 0) // Initial timestamp, when data is read the very first time
+                {
+                    deltaTime = 0; // This is the time passed since the last reading. It needs to be 0 for the very first reading
+                }
+                else
+                {
+                    deltaTime = (event.timestamp - timestamp) * nanosecond2second;
+                }
+
+                timestamp = event.timestamp;
+
+                /*  V0 = V + AT
+                 *  A = Acceleration, T = Time in seconds
+                 *  T = 10 milliseconds = 0.01 seconds
+                 *  V0 = Previously calculated Velocity. Assume 0 at the start.
+                 */
+
+                velocityX = (velocityX + (firstValue*deltaTime));
+                velocityY = (velocityY + (secondValue*deltaTime));
+                velocityZ = (velocityZ + (thirdValue*deltaTime));
+
+                /*
+                 * Consider using GPS data along with accelerometer data.
+                 * Accelerometer on it's own may not be accurate enough
+                 */
+                mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+                mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
 
                 /*
                  *  BELOW
@@ -269,8 +327,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 break;
 
-            case Sensor.TYPE_ORIENTATION:
-                firstValue = Math.round(event.values[0]);
+            case Sensor.TYPE_ROTATION_VECTOR:
+                SensorManager.getRotationMatrixFromVector(rMat,event.values);
+                firstValue = Math.round( (int) (Math.toDegrees(SensorManager.getOrientation(rMat,orientation)[0]) + 360) % 360);
                 mTextSensorOrientation.setText("Compass : " + Float.toString(firstValue) + (char) 0x00B0);
 
                 if (record == true) {

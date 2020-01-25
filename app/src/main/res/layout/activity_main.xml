@@ -41,6 +41,22 @@
                 app:layout_constraintTop_toBottomOf="@+id/label_compass"
                 ></TextView>
 
+            <TextView
+                android:id = "@+id/label_velocity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/label_accelerometer"
+                ></TextView>
+
+            <TextView
+                android:id = "@+id/label_velocity_GPS"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/label_velocity"
+                ></TextView>
+
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/chart_gyroscope"
                 android:layout_width="368dp"
@@ -48,7 +64,7 @@
                 tools:layout_editor_absoluteY="0dp"
                 tools:layout_editor_absoluteX="8dp"
                 app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/label_accelerometer"
+                app:layout_constraintTop_toBottomOf="@+id/label_velocity_GPS"
                 />
 
             <com.github.mikephil.charting.charts.LineChart
