@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "306021670436",
+    "firebase_url": "https://segp9a-test-server.firebaseio.com",
+    "project_id": "segp9a-test-server",
+    "storage_bucket": "segp9a-test-server.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:306021670436:android:897f891c0b03604bb002b1",
+        "android_client_info": {
+          "package_name": "com.example.androidsensor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "306021670436-ujkrvijv7vujirkb6teqtaekognhsddd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_jb2GNI7DAosiWXs7v-G9cMflmF1qq4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "306021670436-ujkrvijv7vujirkb6teqtaekognhsddd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
