@@ -58,7 +58,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView mTextSensorGyroscope;
     private TextView mTextSensorOrientation;
     private TextView mTextVelocity;
-    private TextView mTextVelocityGPS;
+    //private TextView mTextVelocityGPS;
+    private TextView mTextVelocityKMH;
 
     private LineChart mChartGyro, mChartAccel, mChartMagneto;
 
@@ -107,7 +108,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
         //mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
         mTextVelocity = (TextView) findViewById(R.id.label_velocity);
-        mTextVelocityGPS = (TextView) findViewById((R.id.label_velocity_GPS));
+        //mTextVelocityGPS = (TextView) findViewById((R.id.label_velocity_GPS));
+        mTextVelocityKMH = (TextView) findViewById(R.id.label_velocity_KMH);
 
         // Variables to get sensors
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
@@ -228,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 /*
                  *  Filter small movements to reduce noise.
                  *  If accelerometer values ALL read between -0.1 and 0.1,
-                 *  assume the user is simply standing/ not moving
+                 *  assume the user is simply standing/not moving
                  *  Value should be adjusted later on after further testing
                  */
                 if(Math.abs(firstValue) <= 0.1 && Math.abs(secondValue) <= 0.1 && Math.abs(thirdValue) <= 0.1)
@@ -256,20 +258,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 /*  V0 = V + AT
                  *  A = Acceleration, T = Time in seconds
-                 *  T = 10 milliseconds = 0.01 seconds
-                 *  V0 = Previously calculated Velocity. Assume 0 at the start.
+                 *  T = time since previous reading
+                 *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
                  */
 
                 velocityX = (velocityX + (firstValue*deltaTime));
                 velocityY = (velocityY + (secondValue*deltaTime));
                 velocityZ = (velocityZ + (thirdValue*deltaTime));
 
-                /*
-                 * Consider using GPS data along with accelerometer data.
+                /* Note :
+                 * Consider using GPS data along with accelerometer data (sensor fusion).
                  * Accelerometer on it's own may not be accurate enough
                  */
                 mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
-                mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+                //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+                mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
 
                 /*
                  *  BELOW
