@@ -235,9 +235,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  */
                 if(Math.abs(firstValue) <= 0.1 && Math.abs(secondValue) <= 0.1 && Math.abs(thirdValue) <= 0.1)
                 {
-                    velocityX = 0; // This part also allows the velocity to "reset" itself. Hopefully reducing accumulated offset
-                    velocityY = 0;
-                    velocityZ = 0;
+                    firstValue = 0; // Movements below 0.1 threshold wont be considered
+                    secondValue = 0;
+                    thirdValue = 0;
                 }
 
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
