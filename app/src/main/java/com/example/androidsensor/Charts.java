@@ -15,6 +15,7 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 public class Charts{
     // Graph
     public LineChart mChartGyro, mChartAccel, mChartMagneto;
+    public LineChart mTextVelocityGPS, mTextVelocityKMH;
     private MainActivity main;
 
     //Constructor

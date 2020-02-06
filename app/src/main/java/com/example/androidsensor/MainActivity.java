@@ -55,9 +55,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView mTextSensorAccelerometer;
     private TextView mTextSensorGyroscope;
     private TextView mTextSensorOrientation;
+    private TextView mTextVelocity;
+    private TextView mTextVelocityGPS;
+    private TextView mTextVelocityKMH;
 
     // Graph
     private Charts charts;
+
+    // Database
+    private float rMat[] = new float[9];
+    private float[] orientation = new float[3];
+    // Assume device not moving when starting
+    private double velocityX = 0.0f; 
+    private double velocityY = 0.0f;
+    private double velocityZ = 0.0f;
+    private double timestamp = 0.0f;
+    // Convert nanoseconds to seconds
+    private static final float nanosecond2second = 1.0f / 1000000000.0f; 
 
     // Variables to store data retrieved from sensor
     private float xValue, yValue, zValue;
@@ -79,17 +93,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mDatabase;
 
-    public TextView getmTextSensorAccelerometer() {
-        return mTextSensorAccelerometer;
-    }
 
-    public TextView getmTextSensorGyroscope() {
-        return mTextSensorGyroscope;
-    }
-
-    public TextView getmTextSensorOrientation() {
-        return mTextSensorOrientation;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +111,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Access text in the app.
         mTextSensorAccelerometer = (TextView) findViewById(R.id.label_accelerometer);
         mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
+        mTextVelocity = (TextView) findViewById(R.id.label_velocity);
+        //mTextVelocityGPS = (TextView) findViewById((R.id.label_velocity_GPS));
+        mTextVelocityKMH = (TextView) findViewById(R.id.label_velocity_KMH);
 
         feedMultiple();
 
@@ -172,11 +179,67 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         switch (sensorType){
             case Sensor.TYPE_LINEAR_ACCELERATION :
-                setValues(event);
-                addEntry(event, charts.mChartAccel);
-                // Set the text in the app
-                mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue));
+                double deltaTime;
 
+                xValue = event.values[0];
+                yValue = event.values[1];
+                zValue = event.values[2];
+
+                /*
+                 *  Filter small movements to reduce noise.
+                 *  If accelerometer values ALL read between -0.1 and 0.1,
+                 *  assume the user is simply standing/not moving
+                 *  Value should be adjusted later on after further testing
+                 */
+                if(Math.abs(xValue) <= 0.1 && Math.abs(yValue) <= 0.1 && Math.abs(zValue) <= 0.1)
+                {
+                    // Movements below 0.1 threshold wont be considered
+                    xValue = 0; 
+                    yValue = 0;
+                    zValue = 0;
+                }
+
+                // Set the text in the app
+                mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue)); 
+
+                addEntry(event, charts.mChartAccel);
+
+                // Timestamp returns time in nanoseconds, which should be much more accurate
+                if(timestamp == 0)
+                {
+                    // This is the time passed since the last reading. It needs to be 0 for the very first reading
+                    deltaTime = 0; 
+                }
+                else
+                {
+                    deltaTime = (event.timestamp - timestamp) * nanosecond2second;
+                }
+
+                timestamp = event.timestamp;
+
+                /*  V0 = V + AT
+                 *  A = Acceleration, T = Time in seconds
+                 *  T = time since previous reading
+                 *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
+                 */
+
+                velocityX = (velocityX + (xValue*deltaTime));
+                velocityY = (velocityY + (yValue*deltaTime));
+                velocityZ = (velocityZ + (zValue*deltaTime));
+
+                /* Note :
+                 * Consider using GPS data along with accelerometer data (sensor fusion).
+                 * Accelerometer on it's own may not be accurate enough
+                 */
+                mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+                //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+                mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+
+                /*
+                 *  BELOW
+                 *  Writing to AccelLog.csv
+                 *  Very rough implementation, can possibly be improved.
+                 * */
                 if (record == true) {
                     mDatabase.child("X").setValue(xValue);
                     mDatabase.child("Y").setValue(yValue);
@@ -195,9 +258,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 addEntry(event, charts.mChartMagneto);
                 break;
 
-            case Sensor.TYPE_ORIENTATION:
-                xValue = Math.round(event.values[0]);
+            case Sensor.TYPE_ROTATION_VECTOR:
+                SensorManager.getRotationMatrixFromVector(rMat,event.values);
+                xValue = Math.round( (int) (Math.toDegrees(SensorManager.getOrientation(rMat,orientation)[0]) + 360) % 360);
                 mTextSensorOrientation.setText("Compass : " + Float.toString(xValue) + (char) 0x00B0);
+
                 if (record == true) {
                     mDatabase.child("compass").setValue(xValue);
                 }
@@ -315,7 +380,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         thread.interrupt();
         super.onDestroy();
     }
+    public TextView getmTextSensorAccelerometer() {
+        return mTextSensorAccelerometer;
+    }
 
+    public TextView getmTextSensorGyroscope() {
+        return mTextSensorGyroscope;
+    }
+
+    public TextView getmTextSensorOrientation() {
+        return mTextSensorOrientation;
+    }
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
