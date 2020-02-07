@@ -5,6 +5,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -29,6 +31,14 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionEvent;
+import com.google.android.gms.location.ActivityTransitionRequest;
+import com.google.android.gms.location.ActivityTransitionResult;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -42,6 +52,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -70,11 +82,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double velocityY = 0.0f;
     private double velocityZ = 0.0f;
     private double timestamp = 0.0f;
+    private double previousTimestamp = 0.0f;
     // Convert nanoseconds to seconds
-    private static final float nanosecond2second = 1.0f / 1000000000.0f; 
+    private static final float nanosecond2second = 1.0f / 1000000000.0f;
+    double deltaTime = 0;
+    double deltaY = 0;
+    double dAdT = 0;
+    double constant = 0;
 
     // Variables to store data retrieved from sensor
-    private float xValue, yValue, zValue;
+    private float xValue, yValue = 0, zValue;
+    private float previousYValue = 0;
 
     private Thread thread;
     private boolean plotData = true;
@@ -93,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mDatabase;
 
+    private PendingIntent pendingIntent;
 
 
     @Override
@@ -100,6 +119,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
 
         // Get database info
         mFirebaseDatabase = FirebaseDatabase.getInstance();
@@ -179,7 +200,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         switch (sensorType){
             case Sensor.TYPE_LINEAR_ACCELERATION :
-                double deltaTime;
 
                 xValue = event.values[0];
                 yValue = event.values[1];
@@ -191,18 +211,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  assume the user is simply standing/not moving
                  *  Value should be adjusted later on after further testing
                  */
+                /*
                 if(Math.abs(xValue) <= 0.1 && Math.abs(yValue) <= 0.1 && Math.abs(zValue) <= 0.1)
                 {
                     // Movements below 0.1 threshold wont be considered
                     xValue = 0; 
                     yValue = 0;
                     zValue = 0;
-                }
+                }*/
 
                 // Set the text in the app
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue)); 
 
                 addEntry(event, charts.mChartAccel);
+
+                deltaY = yValue - previousYValue;
+                previousYValue = yValue;
 
                 // Timestamp returns time in nanoseconds, which should be much more accurate
                 if(timestamp == 0)
@@ -212,10 +236,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 else
                 {
-                    deltaTime = (event.timestamp - timestamp) * nanosecond2second;
+                    previousTimestamp = timestamp;
+                    deltaTime = (event.timestamp*nanosecond2second - timestamp);
                 }
 
-                timestamp = event.timestamp;
+                timestamp = event.timestamp*nanosecond2second;
+
+
+                dAdT = deltaY/deltaTime;
+
+                constant = yValue - (dAdT*(timestamp));
+
+                // Find K
+                double K = velocityY - (0.5* dAdT * previousTimestamp * previousTimestamp) - (constant * previousTimestamp);
+
+
+                // Find current V
+                velocityY = (0.5*dAdT*timestamp*timestamp)-(constant*timestamp) + K;
+                System.out.println(velocityY*3.6);
+                System.out.printf("k : %f \ndadt : %f \n c : %f\n",K,dAdT,constant);
 
                 /*  V0 = V + AT
                  *  A = Acceleration, T = Time in seconds
@@ -223,17 +262,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
                  */
 
+                /*
                 velocityX = (velocityX + (xValue*deltaTime));
                 velocityY = (velocityY + (yValue*deltaTime));
                 velocityZ = (velocityZ + (zValue*deltaTime));
+                */
+
 
                 /* Note :
                  * Consider using GPS data along with accelerometer data (sensor fusion).
                  * Accelerometer on it's own may not be accurate enough
                  */
+
+                /*
                 mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
                 //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
                 mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+                */
 
                 /*
                  *  BELOW
@@ -271,6 +316,36 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             default :
                 break;
         }
+    }
+
+    protected void onReceive(Context context, Intent intent) {
+        if (ActivityTransitionResult.hasResult(intent)) {
+            ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
+            for (ActivityTransitionEvent event : result.getTransitionEvents()) {
+                // Do something useful here...
+            }
+        }
+    }
+
+    ActivityTransitionRequest buildTransitionRequest() {
+        List transitions = new ArrayList<>();
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+        return new ActivityTransitionRequest(transitions);
     }
 
     public void setValues (SensorEvent event) {
