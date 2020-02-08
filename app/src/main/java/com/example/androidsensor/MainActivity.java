@@ -229,19 +229,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 previousYValue = yValue;
 
                 // Timestamp returns time in nanoseconds, which should be much more accurate
+
+                /*
                 if(timestamp == 0)
                 {
                     // This is the time passed since the last reading. It needs to be 0 for the very first reading
-                    deltaTime = 0; 
+                    deltaTime = 0;
+                    System.out.println("Here");
                 }
                 else
                 {
                     previousTimestamp = timestamp;
                     deltaTime = (event.timestamp*nanosecond2second - timestamp);
                 }
+                */
 
+                // Track previous timestamp t0
+                previousTimestamp = timestamp;
+                // Track current timestamp t1
                 timestamp = event.timestamp*nanosecond2second;
-
+                // (t1 - t0)
+                deltaTime = (event.timestamp*nanosecond2second - previousTimestamp);
 
                 dAdT = deltaY/deltaTime;
 
@@ -249,7 +257,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 // Find K
                 double K = velocityY - (0.5* dAdT * previousTimestamp * previousTimestamp) - (constant * previousTimestamp);
-
 
                 // Find current V
                 velocityY = (0.5*dAdT*timestamp*timestamp)-(constant*timestamp) + K;
