@@ -70,8 +70,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double velocityY = 0.0f;
     private double velocityZ = 0.0f;
     private double timestamp = 0.0f;
+<<<<<<< Updated upstream
     private static final float nanosecond2second = 1.0f / 1000000000.0f; // Convert nanoseconds to seconds
 
+=======
+    private double displacementY = 0.0f;
+    private double previousTimestamp = 0.0f;
+    // Convert nanoseconds to seconds
+    private static final float nanosecond2second = 1.0f / 1000000000.0f;
+    double deltaTime = 0;
+    double deltaY = 0;
+    double dAdT = 0;
+    double constant = 0;
+
+    // Variables to store data retrieved from sensor
+    private float xValue, yValue = 0, zValue;
+    private float previousYValue = 0;
+>>>>>>> Stashed changes
 
     private Thread thread;
     private boolean plotData = true;
@@ -233,19 +248,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  assume the user is simply standing/not moving
                  *  Value should be adjusted later on after further testing
                  */
+<<<<<<< Updated upstream
                 if(Math.abs(firstValue) <= 0.1 && Math.abs(secondValue) <= 0.1 && Math.abs(thirdValue) <= 0.1)
                 {
                     firstValue = 0; // Movements below 0.1 threshold wont be considered
                     secondValue = 0;
                     thirdValue = 0;
                 }
+=======
+
+                if(Math.abs(xValue) <= 0.1 && Math.abs(yValue) <= 0.1 && Math.abs(zValue) <= 0.1)
+                {
+                    // Movements below 0.1 threshold wont be considered
+                    xValue = 0; 
+                    yValue = 0;
+                    zValue = 0;
+                }
+
+                // Set the text in the app
+                mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue)); 
+>>>>>>> Stashed changes
 
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, firstValue, secondValue, thirdValue)); // Set the text in the app
 
+<<<<<<< Updated upstream
                 addEntry(event, mChartAccel);
 
                 // Timestamp returns time in nanoseconds, which should be much more accurate
                 if(timestamp == 0) // Initial timestamp, when data is read the very first time
+=======
+                //deltaY = yValue - previousYValue;
+                //previousYValue = yValue;
+
+                // Timestamp returns time in nanoseconds, which should be much more accurate
+
+
+                if(timestamp == 0)
+>>>>>>> Stashed changes
                 {
                     deltaTime = 0; // This is the time passed since the last reading. It needs to be 0 for the very first reading
                 }
@@ -253,8 +292,35 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 {
                     deltaTime = (event.timestamp - timestamp) * nanosecond2second;
                 }
+<<<<<<< Updated upstream
 
                 timestamp = event.timestamp;
+=======
+
+                timestamp = event.timestamp;
+
+
+                // Track previous timestamp t0
+                /*
+                previousTimestamp = timestamp;
+                // Track current timestamp t1
+                timestamp = event.timestamp*nanosecond2second;
+                // (t1 - t0)
+                deltaTime = (event.timestamp*nanosecond2second - previousTimestamp);
+
+                dAdT = deltaY/deltaTime;
+
+                constant = yValue - (dAdT*(timestamp));*/
+
+                // Find K
+                //double K = velocityY - (0.5* dAdT * previousTimestamp * previousTimestamp) - (constant * previousTimestamp);
+
+                // Find current V
+                /*
+                velocityY = (0.5*dAdT*timestamp*timestamp)-(constant*timestamp);
+                System.out.printf("V : %f\n",velocityY*3.6);
+                System.out.printf("dadt : %f \n c : %f\n DY : %f\n ",dAdT,constant,deltaY);*/
+>>>>>>> Stashed changes
 
                 /*  V0 = V + AT
                  *  A = Acceleration, T = Time in seconds
@@ -262,17 +328,38 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
                  */
 
+<<<<<<< Updated upstream
                 velocityX = (velocityX + (firstValue*deltaTime));
                 velocityY = (velocityY + (secondValue*deltaTime));
                 velocityZ = (velocityZ + (thirdValue*deltaTime));
+=======
+
+                //velocityX = (velocityX + (xValue*deltaTime));
+                velocityY = (velocityY + (yValue*deltaTime));
+                displacementY = (displacementY + (velocityY*deltaTime));
+                System.out.println(yValue);
+                System.out.printf("V : %f\n",velocityY*3.6);
+                //velocityZ = (velocityZ + (zValue*deltaTime));
+
+
+>>>>>>> Stashed changes
 
                 /* Note :
                  * Consider using GPS data along with accelerometer data (sensor fusion).
                  * Accelerometer on it's own may not be accurate enough
                  */
+<<<<<<< Updated upstream
                 mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
                 //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
                 mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+=======
+
+
+                mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, displacementY, velocityZ));
+                //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+                mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+
+>>>>>>> Stashed changes
 
                 /*
                  *  BELOW
@@ -368,7 +455,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             default :
                 break;
 
+<<<<<<< Updated upstream
         }
+=======
+>>>>>>> Stashed changes
 
     }
 
