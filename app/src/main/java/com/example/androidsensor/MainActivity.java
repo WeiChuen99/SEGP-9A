@@ -248,22 +248,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  assume the user is simply standing/not moving
                  *  Value should be adjusted later on after further testing
                  */
-<<<<<<< Updated upstream
+
                 if(Math.abs(firstValue) <= 0.1 && Math.abs(secondValue) <= 0.1 && Math.abs(thirdValue) <= 0.1)
                 {
                     firstValue = 0; // Movements below 0.1 threshold wont be considered
                     secondValue = 0;
                     thirdValue = 0;
                 }
-=======
 
-                if(Math.abs(xValue) <= 0.1 && Math.abs(yValue) <= 0.1 && Math.abs(zValue) <= 0.1)
-                {
-                    // Movements below 0.1 threshold wont be considered
-                    xValue = 0; 
-                    yValue = 0;
-                    zValue = 0;
-                }
 
                 // Set the text in the app
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue)); 
