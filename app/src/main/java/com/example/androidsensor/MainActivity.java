@@ -1,5 +1,6 @@
 package com.example.androidsensor;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -22,6 +23,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -33,11 +35,14 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.ActivityTransition;
 import com.google.android.gms.location.ActivityTransitionEvent;
 import com.google.android.gms.location.ActivityTransitionRequest;
 import com.google.android.gms.location.ActivityTransitionResult;
 import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -58,6 +63,8 @@ import java.util.Locale;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static android.app.Service.START_STICKY;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     // Sensors
@@ -70,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView mTextVelocity;
     private TextView mTextVelocityGPS;
     private TextView mTextVelocityKMH;
+    private TextView mTextActivity;
+    private TextView mTextConfidence;
 
     // Graph
     private Charts charts;
@@ -78,20 +87,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float rMat[] = new float[9];
     private float[] orientation = new float[3];
     // Assume device not moving when starting
-    private double velocityX = 0.0f; 
-    private double velocityY = 0.0f;
-    private double velocityZ = 0.0f;
-    private double timestamp = 0.0f;
-    private double previousTimestamp = 0.0f;
+    private float velocityX = 0.0f;
+    private float velocityY = 0.0f;
+    private float velocityZ = 0.0f;
+    private long timestamp = 0;
+    private long previousTimestamp = 0;
     // Convert nanoseconds to seconds
-    private static final float nanosecond2second = 1.0f / 1000000000.0f;
-    double deltaTime = 0;
-    double deltaY = 0;
-    double dAdT = 0;
-    double constant = 0;
+    private static final double nanosecond2second = 1.0f / 1000000000.0f;
+    float deltaTime = 0;
+    float deltaY = 0;
+    float dAdT = 0;
+    float constant = 0;
 
     // Variables to store data retrieved from sensor
-    private float xValue, yValue = 0, zValue;
+    private float xValue, yValue = 0.0f, zValue;
     private float previousYValue = 0;
 
     private Thread thread;
@@ -111,7 +120,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mDatabase;
 
-    private PendingIntent pendingIntent;
+    private List<ActivityTransition> transitions;
+    private ActivityRecognitionClient activityRecognitionClient;
+    private PendingIntent transitionPendingIntent;
+    private Context mContext;
 
 
     @Override
@@ -120,7 +132,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mContext = this;
+        activityRecognitionClient = ActivityRecognition.getClient(mContext);
 
+
+        Intent intent = new Intent(this, TransitionIntentService.class);
+        transitionPendingIntent = PendingIntent.getService(this, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Get database info
         mFirebaseDatabase = FirebaseDatabase.getInstance();
@@ -135,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mTextVelocity = (TextView) findViewById(R.id.label_velocity);
         //mTextVelocityGPS = (TextView) findViewById((R.id.label_velocity_GPS));
         mTextVelocityKMH = (TextView) findViewById(R.id.label_velocity_KMH);
+        mTextActivity = (TextView) findViewById(R.id.label_activity);
 
         feedMultiple();
 
@@ -145,8 +163,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         startButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
                 record = true;
                 startButton.setEnabled(false);
+
+                registerHandler();
 
                 /*
                  * Data logging part, create/check for file.
@@ -181,12 +202,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 startButton.setEnabled(true);
             }
         });
+
     }
 
     @Override
     protected void onStart(){
         super.onStart();
         sensors.sensorStart();
+
     }
 
     @Override
@@ -211,14 +234,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  assume the user is simply standing/not moving
                  *  Value should be adjusted later on after further testing
                  */
-                /*
+
                 if(Math.abs(xValue) <= 0.1 && Math.abs(yValue) <= 0.1 && Math.abs(zValue) <= 0.1)
                 {
                     // Movements below 0.1 threshold wont be considered
                     xValue = 0; 
                     yValue = 0;
                     zValue = 0;
-                }*/
+                }
 
                 // Set the text in the app
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue)); 
@@ -247,21 +270,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // Track previous timestamp t0
                 previousTimestamp = timestamp;
                 // Track current timestamp t1
-                timestamp = event.timestamp*nanosecond2second;
+                timestamp = event.timestamp;
+
                 // (t1 - t0)
-                deltaTime = (event.timestamp*nanosecond2second - previousTimestamp);
+                deltaTime = (float) ((timestamp - previousTimestamp)*nanosecond2second);
 
                 dAdT = deltaY/deltaTime;
 
-                constant = yValue - (dAdT*(timestamp));
+                // y = mx + c
+                // accel = (dAdT * t) + constant
+                // constant = accel - (dAdT * t)
+                constant = (float) (yValue - (dAdT*(timestamp*nanosecond2second)));
+
+                // V = (0.5 * dAdT * t * t) + (constant * t) + K
+                // K = V - (0.5 * dAdT * t * t) - (constant * t)
 
                 // Find K
-                double K = velocityY - (0.5* dAdT * previousTimestamp * previousTimestamp) - (constant * previousTimestamp);
+                float K = (float) (velocityY - (0.5 * dAdT * previousTimestamp*nanosecond2second * previousTimestamp*nanosecond2second) - (constant * previousTimestamp*nanosecond2second));
 
                 // Find current V
-                velocityY = (0.5*dAdT*timestamp*timestamp)-(constant*timestamp) + K;
-                System.out.println(velocityY*3.6);
-                System.out.printf("k : %f \ndadt : %f \n c : %f\n",K,dAdT,constant);
+                velocityY = (float) ((0.5*dAdT*timestamp*nanosecond2second*timestamp*nanosecond2second)+(constant*timestamp*nanosecond2second) + K);
+
+                //System.out.println(velocityY*3.6);
+                //System.out.printf("k : %f \ndadt : %f \n c : %f\n",K,dAdT,constant);
 
                 /*  V0 = V + AT
                  *  A = Acceleration, T = Time in seconds
@@ -325,34 +356,69 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    protected void onReceive(Context context, Intent intent) {
-        if (ActivityTransitionResult.hasResult(intent)) {
-            ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
-            for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                // Do something useful here...
+    public void registerHandler() {
+        transitions = new ArrayList<>();
+
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.ON_FOOT)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+
+
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.ON_FOOT)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+
+
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+
+        transitions.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+
+        ActivityTransitionRequest activityTransitionRequest
+                = new ActivityTransitionRequest(transitions);
+
+        Task<Void> task = activityRecognitionClient.requestActivityTransitionUpdates(activityTransitionRequest, transitionPendingIntent);
+
+        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Toast.makeText(mContext, "Transition update set up", Toast.LENGTH_LONG).show();
             }
-        }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(mContext, "Transition update Failed to set up", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+        });
     }
 
-    ActivityTransitionRequest buildTransitionRequest() {
-        List transitions = new ArrayList<>();
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build());
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build());
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build());
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build());
-        return new ActivityTransitionRequest(transitions);
+    public void deregisterHandler() {
+        Task<Void> task = activityRecognitionClient.removeActivityTransitionUpdates(transitionPendingIntent);
+        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                transitionPendingIntent.cancel();
+                Toast.makeText(mContext, "Remove Activity Transition Successfully", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(mContext, "Remove Activity Transition Failed", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+        });
     }
 
     public void setValues (SensorEvent event) {
@@ -461,6 +527,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensors.sensorDestroy();
         thread.interrupt();
         super.onDestroy();
+        activityRecognitionClient.removeActivityTransitionUpdates(transitionPendingIntent);
+        deregisterHandler();
+
     }
     public TextView getmTextSensorAccelerometer() {
         return mTextSensorAccelerometer;
