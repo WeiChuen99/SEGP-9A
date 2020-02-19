@@ -24,7 +24,7 @@ public class Sensors {
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mSensorMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED);
-        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+        mSensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
         /*   NOTE : There's TYPE_ACCELEROMETER and TYPE_LINEAR_ACCELERATION that can be used
          *   TYPE_ACCELEROMETER will provide data with gravity calculations
@@ -75,6 +75,7 @@ public class Sensors {
         mSensorManager.registerListener(main, mSensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(main, mSensorGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(main, mSensorMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(main, mSensorOrientation, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public void sensorDestroy() {
