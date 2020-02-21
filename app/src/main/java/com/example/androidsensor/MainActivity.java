@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView mTextSensorGyroscope;
     private TextView mTextSensorOrientation;
     private TextView mTextVelocity;
-    private TextView mTextVelocityGPS;
-    private TextView mTextVelocityKMH;
+    private TextView mTextMovement;
+    private TextView mTextStopCount;
 
     // Graph
     private Charts charts;
@@ -114,7 +114,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mDatabase;
 
-    private PendingIntent pendingIntent;
+    // Movement detection
+    private boolean walking = false;
+    private int numDeceleration = 0;
+    private int stopCount = 0;
 
 
     @Override
@@ -135,9 +138,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Access text in the app.
         mTextSensorAccelerometer = (TextView) findViewById(R.id.label_accelerometer);
         mTextSensorOrientation = (TextView) findViewById(R.id.label_compass);
-        mTextVelocity = (TextView) findViewById(R.id.label_velocity);
+        mTextMovement = (TextView) findViewById(R.id.label_movement);
+        mTextStopCount = (TextView) findViewById(R.id.label_stopcount);
+        //mTextVelocity = (TextView) findViewById(R.id.label_velocity);
         //mTextVelocityGPS = (TextView) findViewById((R.id.label_velocity_GPS));
-        mTextVelocityKMH = (TextView) findViewById(R.id.label_velocity_KMH);
+        //mTextVelocityKMH = (TextView) findViewById(R.id.label_velocity_KMH);
 
         feedMultiple();
 
@@ -208,6 +213,37 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 yValue = event.values[1];
                 zValue = event.values[2];
 
+                if(Math.abs(xValue) <= 0.2 && Math.abs(yValue) <= 0.2 && Math.abs(zValue) <= 0.2)
+                {
+                    // Movements below 0.2 threshold wont be considered
+                    xValue = 0;
+                    yValue = 0;
+                    zValue = 0;
+                }
+
+                // This part to detect if walking or not
+                if(yValue > 0) {
+                    walking = true;
+                    numDeceleration = 0;
+                    mTextMovement.setText("Walking");
+                    if (record == true) {
+                        mDatabase.child("walking").setValue(1);
+                    }
+                }
+                else {
+                    numDeceleration++;
+                }
+
+                if (numDeceleration > 5) {
+                    walking = false;
+                    numDeceleration = 0;
+                    mTextMovement.setText("Stopped");
+                    if (record == true) {
+                        mDatabase.child("walking").setValue(0);
+                    }
+                    stopCount++;
+                }
+
                 if (record == true) {
                     if (file.exists()) {
                         try {
@@ -247,6 +283,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }*/
 
                 // Set the text in the app
+                mTextStopCount.setText("Num of stops : " + stopCount);
                 mTextSensorAccelerometer.setText(getResources().getString(R.string.label_accelerometer, xValue, yValue, zValue));
 
                 addEntry(event, charts.mChartAccel);
@@ -266,74 +303,74 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     deltaTime = (event.timestamp*nanosecond2second - timestamp);
                 }
                 */
-                if (event.timestamp != 0) {
+//                if (event.timestamp != 0) {
+//
+//                    deltaX = xValue - previousXValue;
 
-                    deltaX = xValue - previousXValue;
-
-                    if (xValue <= 0.01) {
-                        deltaX = 0f;
-                    }
-                    // Track current timestamp t1
-                    timestamp = event.timestamp * nanosecond2second;
-                    // (t1 - t0)
-                    deltaTime = (timestamp - previousTimestamp);
-
-                    dAdT = deltaX / deltaTime;
-
-                    constant = xValue - (dAdT * (timestamp));
-
-                    // Find K
-                    kValue = velocityX - (0.5f * dAdT * previousTimestamp * previousTimestamp) - (constant * previousTimestamp);
-
-                    // Find current V
-                    velocityX = (0.5f * dAdT * timestamp * timestamp) + (constant * timestamp) + kValue;
-                    //System.out.println("velocity: " + (velocityX));
-                    // System.out.println("velocity gps: " + location.getSpeed());
-                    System.out.println("deltaX: " + deltaX);
-                    System.out.println("deltaTime: " + deltaTime);
-                    System.out.printf("prevX: %f \n newX: %f \n k : %f \n dadt : %f \n c : %f\n", previousXValue, xValue, kValue, dAdT, constant);
-                    previousXValue = xValue;
-                    previousTimestamp = timestamp;
-
-                    /*  V0 = V + AT
-                     *  A = Acceleration, T = Time in seconds
-                     *  T = time since previous reading
-                     *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
-                     */
-
-                    /*
-                    velocityX = (velocityX + (xValue*deltaTime));
-                    velocityY = (velocityY + (yValue*deltaTime));
-                    velocityZ = (velocityZ + (zValue*deltaTime));
-                    */
-
-                    /* Note :
-                     * Consider using GPS data along with accelerometer data (sensor fusion).
-                     * Accelerometer on it's own may not be accurate enough
-                     */
-
-                    /*
-                    mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
-                    //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
-                    mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
-                    */
-
-                    /*
-                     *  BELOW
-                     *  Writing to AccelLog.csv
-                     *  Very rough implementation, can possibly be improved.
-                     * */
-                    if (record == true) {
-                        mDatabase.child("X").setValue(xValue);
-                        mDatabase.child("Y").setValue(yValue);
-                        mDatabase.child("Z").setValue(zValue);
-                    }
-                }
-                else {
-                    velocityY = 0;
-                    kValue = 0;
-                }
-                break;
+//                    if (xValue <= 0.01) {
+//                        deltaX = 0f;
+//                    }
+//                    // Track current timestamp t1
+//                    timestamp = event.timestamp * nanosecond2second;
+//                    // (t1 - t0)
+//                    deltaTime = (timestamp - previousTimestamp);
+//
+//                    dAdT = deltaX / deltaTime;
+//
+//                    constant = xValue - (dAdT * (timestamp));
+//
+//                    // Find K
+//                    kValue = velocityX - (0.5f * dAdT * previousTimestamp * previousTimestamp) - (constant * previousTimestamp);
+//
+//                    // Find current V
+//                    velocityX = (0.5f * dAdT * timestamp * timestamp) + (constant * timestamp) + kValue;
+//                    //System.out.println("velocity: " + (velocityX));
+//                    // System.out.println("velocity gps: " + location.getSpeed());
+//                    System.out.println("deltaX: " + deltaX);
+//                    System.out.println("deltaTime: " + deltaTime);
+//                    System.out.printf("prevX: %f \n newX: %f \n k : %f \n dadt : %f \n c : %f\n", previousXValue, xValue, kValue, dAdT, constant);
+//                    previousXValue = xValue;
+//                    previousTimestamp = timestamp;
+//
+//                    /*  V0 = V + AT
+//                     *  A = Acceleration, T = Time in seconds
+//                     *  T = time since previous reading
+//                     *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
+//                     */
+//
+//                    /*
+//                    velocityX = (velocityX + (xValue*deltaTime));
+//                    velocityY = (velocityY + (yValue*deltaTime));
+//                    velocityZ = (velocityZ + (zValue*deltaTime));
+//                    */
+//
+//                    /* Note :
+//                     * Consider using GPS data along with accelerometer data (sensor fusion).
+//                     * Accelerometer on it's own may not be accurate enough
+//                     */
+//
+//                    /*
+//                    mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+//                    //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+//                    mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+//                    */
+//
+//                    /*
+//                     *  BELOW
+//                     *  Writing to AccelLog.csv
+//                     *  Very rough implementation, can possibly be improved.
+//                     * */
+//                    if (record == true) {
+//                        mDatabase.child("X").setValue(xValue);
+//                        mDatabase.child("Y").setValue(yValue);
+//                        mDatabase.child("Z").setValue(zValue);
+//                    }
+//                }
+//                else {
+//                    velocityY = 0;
+//                    kValue = 0;
+//                }
+//                break;
 
             case Sensor.TYPE_GYROSCOPE :
                 setValues(event);
@@ -359,36 +396,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             default :
                 break;
         }
-    }
-
-    protected void onReceive(Context context, Intent intent) {
-        if (ActivityTransitionResult.hasResult(intent)) {
-            ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
-            for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                // Do something useful here...
-            }
-        }
-    }
-
-    ActivityTransitionRequest buildTransitionRequest() {
-        List transitions = new ArrayList<>();
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build());
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build());
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build());
-        transitions.add(new ActivityTransition.Builder()
-                .setActivityType(DetectedActivity.STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build());
-        return new ActivityTransitionRequest(transitions);
     }
 
     public void setValues (SensorEvent event) {
