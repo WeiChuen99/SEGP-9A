@@ -79,6 +79,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     double deltaY = 0;
     double dAdT = 0;
     double constant = 0;
+    // Number of deceleration detected
+    private int numDeceleration = 0;
+    // Boolean for walking
+    private boolean walking = false;
+
 
     // Variables to store data retrieved from sensor
     private float xValue, yValue = 0, zValue;
@@ -282,6 +287,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 timestamp = event.timestamp;
 
+
                 timestamp = event.timestamp;
 
 
@@ -306,11 +312,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 System.out.printf("V : %f\n",velocityY*3.6);
                 System.out.printf("dadt : %f \n c : %f\n DY : %f\n ",dAdT,constant,deltaY);*/
 
+                //mTextVelocity.setText("Idle");
+
+                if (yValue > 0)
+                {
+                    walking = true;
+                    numDeceleration = 0;
+                    mTextVelocity.setText("Walking");
+                }
+                else
+                {
+                    numDeceleration++;
+                }
+
+                if (numDeceleration > 5)
+                {
+                    walking = false;
+                    numDeceleration = 0;
+                    mTextVelocity.setText("Stopped");
+                }
+
+
+
                 /*  V0 = V + AT
                  *  A = Acceleration, T = Time in seconds
                  *  T = time since previous reading
                  *  V0 = Previously calculated Velocity. Assume initial velocity is 0m/s.
                  */
+
 
 
                 velocityX = (velocityX + (firstValue*deltaTime));
@@ -327,14 +356,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
 
+                //velocityX = (velocityX + (xValue*deltaTime));
+                //velocityY = (velocityY + (yValue*deltaTime));
+                //velocityZ = (velocityZ + (zValue*deltaTime));
+
+
                 /* Note :
                  * Consider using GPS data along with accelerometer data (sensor fusion).
                  * Accelerometer on it's own may not be accurate enough
                  */
 
+
                 mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+
+                //mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+
                 //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
-                mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+                //mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
 
 
                 mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, displacementY, velocityZ));
