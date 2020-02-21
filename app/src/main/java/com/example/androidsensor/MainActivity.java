@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int numDeceleration = 0;
     // Boolean for walking
     private boolean walking = false;
+    int count = 0;
 
 
     // Variables to store data retrieved from sensor
@@ -241,6 +242,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case Sensor.TYPE_LINEAR_ACCELERATION :
                 double deltaTime = 0;
 
+
                 firstValue = event.values[0];
                 secondValue = event.values[1];
                 thirdValue = event.values[2];
@@ -252,12 +254,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  *  Value should be adjusted later on after further testing
                  */
 
-                if(Math.abs(firstValue) <= 0.1 && Math.abs(secondValue) <= 0.1 && Math.abs(thirdValue) <= 0.1)
+                if(Math.abs(secondValue) <= 0.4)
                 {
                     firstValue = 0; // Movements below 0.1 threshold wont be considered
                     secondValue = 0;
                     thirdValue = 0;
                 }
+
+                if (secondValue > 0)
+                {
+                    walking = true;
+                    numDeceleration = 0;
+                    mTextVelocity.setText("Walking");
+                }
+                else
+                {
+                    numDeceleration++;
+                }
+
+
+                if (numDeceleration > 5)
+                {
+                    walking = false;
+                    numDeceleration = 0;
+                    mTextVelocity.setText("Stopped");
+                    count++;
+                }
+
+                mTextVelocityKMH.setText("Number of stopped : " + count);
 
 
                 // Set the text in the app
@@ -314,23 +338,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 //mTextVelocity.setText("Idle");
 
-                if (yValue > 0)
-                {
-                    walking = true;
-                    numDeceleration = 0;
-                    mTextVelocity.setText("Walking");
-                }
-                else
-                {
-                    numDeceleration++;
-                }
 
-                if (numDeceleration > 5)
-                {
-                    walking = false;
-                    numDeceleration = 0;
-                    mTextVelocity.setText("Stopped");
-                }
 
 
 
@@ -367,7 +375,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                  */
 
 
-                mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
+
 
                 //mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
 
@@ -375,9 +383,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
 
 
-                mTextVelocity.setText(getResources().getString(R.string.label_velocity, velocityX, displacementY, velocityZ));
+
                 //mTextVelocityGPS.setText(getResources().getString(R.string.label_velocity, velocityX, velocityY, velocityZ));
-                mTextVelocityKMH.setText(getResources().getString(R.string.label_velocity_KMH, velocityX*3.6, velocityY*3.6, velocityZ*3.6));
+
 
 
                 /*
