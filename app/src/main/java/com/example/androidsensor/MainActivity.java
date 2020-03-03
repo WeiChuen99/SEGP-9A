@@ -32,13 +32,6 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.google.android.gms.location.ActivityRecognition;
-import com.google.android.gms.location.ActivityRecognitionClient;
-import com.google.android.gms.location.ActivityTransition;
-import com.google.android.gms.location.ActivityTransitionEvent;
-import com.google.android.gms.location.ActivityTransitionRequest;
-import com.google.android.gms.location.ActivityTransitionResult;
-import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -223,7 +216,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                }
 
                 // This part to detect if walking or not
-                if(yValue > 0.3) { 
+                //walking and not turning              walking and turning
+                if(yValue > 0.3 && xValue < 0.3 || (yValue > 0.3 && xValue > 0.3)) {
 
                     walking = true;
 
@@ -233,6 +227,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (record == true) {
                         mDatabase.child("walking").setValue(1);
                     }
+                }
+                //standing and turn                                 standing
+                else if ((yValue < 0.3 && xValue > 0.3) || (yValue < 0.3 && xValue < 0.3)) {
+                    numDeceleration++;
                 }
                 else {
                     numDeceleration++;
