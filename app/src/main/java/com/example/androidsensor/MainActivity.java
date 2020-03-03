@@ -118,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean walking = false;
     private int numDeceleration = 0;
     private int stopCount = 0;
+    private float stopTime = 0.1f;
 
 
     @Override
@@ -213,17 +214,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 yValue = event.values[1];
                 zValue = event.values[2];
 
-                if(Math.abs(xValue) <= 0.2 && Math.abs(yValue) <= 0.2 && Math.abs(zValue) <= 0.2)
-                {
-                    // Movements below 0.2 threshold wont be considered
-                    xValue = 0;
-                    yValue = 0;
-                    zValue = 0;
-                }
+//                if(Math.abs(xValue) <= 0.2 && Math.abs(yValue) <= 0.2 && Math.abs(zValue) <= 0.2)
+//                {
+//                    // Movements below 0.2 threshold wont be considered
+//                    xValue = 0;
+//                    yValue = 0;
+//                    zValue = 0;
+//                }
 
                 // This part to detect if walking or not
-                if(yValue > 0) {
+                if(yValue > 0.3) { 
+
                     walking = true;
+
+
                     numDeceleration = 0;
                     mTextMovement.setText("Walking");
                     if (record == true) {
@@ -235,13 +239,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
 
                 if (numDeceleration > 5) {
+
                     walking = false;
-                    numDeceleration = 0;
-                    mTextMovement.setText("Stopped");
-                    if (record == true) {
-                        mDatabase.child("walking").setValue(0);
+
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    stopCount++;
+
+                    if(walking == false) {
+                        numDeceleration = 0;
+
+                        mTextMovement.setText("Stopped");
+                        if (record == true) {
+                            mDatabase.child("walking").setValue(0);
+                        }
+                        stopCount++;
+                    }
                 }
 
                 if (record == true) {
